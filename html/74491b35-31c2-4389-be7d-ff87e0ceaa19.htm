@@ -1,0 +1,241 @@
+﻿<!DOCTYPE html ><html lang="en-US"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="shortcut icon" href="../icons/favicon.ico" /><link rel="stylesheet" href="../css/bulma.css" /><link rel="stylesheet" href="../css/font-awesome.min.css" /><link rel="stylesheet" href="../css/presentationStyle.css" /><link rel="stylesheet" href="../css/vs.min.css" /><script src="../scripts/jquery-3.5.1.min.js"></script><script src="../scripts/clipboard.min.js"></script><script src="../scripts/highlight.min.js"></script><script src="../scripts/presentationStyle.js"></script><title>Getting started with Graph framework</title><meta name="Title" content="Getting started with Graph framework" /><meta name="Help.Id" content="74491b35-31c2-4389-be7d-ff87e0ceaa19" /><meta name="Help.ContentType" content="How To" /><meta name="guid" content="74491b35-31c2-4389-be7d-ff87e0ceaa19" /><meta name="Description" content="Quine.Schemas.Graph and Quine.Graph assemblies consist mostly of abstract types that need implementation. This section uses the small graph below to illustrate how to implement the abstractions." /><meta name="tocFile" content="../toc/IDB.xml" /></head><body><div class="fixedLayout"><div id="Header" class="fixedHeader"><div class="pageHeader level mb-0 py-2 px-4"><div id="TitleContainer" class="level-left"><div class="level-item"><img src="../icons/Help.png" /></div><div id="DocumentationTitle" class="level-item">Quine libraries user's guide</div></div><div id="LangFilterSearchContainer" class="level-right"><div class="level-item"><div class="dropdown is-hoverable"><div class="dropdown-trigger"><button class="button" aria-haspopup="true" aria-controls="dropdown-menu"><span id="CurrentLanguage"></span><span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span></button></div><div class="dropdown-menu" role="menu"><div id="LanguageSelections" class="dropdown-content"><a class="dropdown-item languageFilterItem" data-languageId="cs">C#</a></div></div></div></div><div class="level-item"><form id="SearchForm" action="#" onsubmit="TransferToSearchPage(); return false;"><div class="field"><div class="control has-icons-left"><input id="SearchTerms" class="input" type="text" maxlength="200" placeholder="Search" /><span class="icon is-small is-left"><i class="fa fa-search"></i></span><button id="SearchButton" type="submit" class="is-hidden"></button></div></div></form></div></div></div></div><div class="fixedContent"><nav class="breadcrumb my-1 px-2 border-bottom" role="navigation"><ul id="TopicBreadcrumbs" /></nav><div id="ContentContainer" class="columns pl-5 pr-5 fixedContent"><div id="ShowHideTOCColumn" class="column is-hidden-tablet"><a id="ShowHideTOC">Show/Hide TOC</a></div><div id="TOCColumn" class="column is-hidden-mobile"><nav class="toc"><ul id="TableOfContents" class="toc-menu" /></nav></div><div id="Resizer" class="is-hidden"></div><div id="TopicContent" class="column content is-7"><h1>Getting started with Graph framework</h1><div><p><strong>Quine.Schemas.Graph</strong> and <strong>Quine.Graph</strong> assemblies consist mostly of abstract types that need implementation.  This
+        section uses the small graph below to illustrate how to implement the abstractions.  In this graph, source node generates
+        <span class="code">Count</span> integers,
+        starting from 0 and incrementing by <span class="code">Increment</span> (e.g., 0, 4, 8, 12).  Transform node subtracts
+        the provided <span class="code">Constant</span>, while the drain node prints out the results.
+      </p><p>
+        The complete sample is in <span class="code">Quine.Samples\GraphSample.cs</span>.
+      </p><figure class="mediaNear"><figcaption>Getting Started Sample Graph</figcaption><img alt="Getting Started Graph" src="../media/GraphGettingStarted.png" /></figure><article class="message is-info"><div class="message-header"><p><span class="icon"><i class="fa fa-info-circle"></i></span>  Tip</p></div><div class="message-body"><p>
+          Rely on <strong>types</strong> provided by the library: if your code compiles, it is at least 80% correct.
+          Errors occurring at run-time have two main causes: 1) invalid graph connectivity, 2) errors during instantiations
+          of the nodes' implementing types.
+        </p></div></article><p>
+        This is a long sample, with a lot of boiler-plate because we are starting from scratch, with no predefined nodes
+        or behaviors.  With an existing library of behavior, the code would be much shorter.
+        Note that only a fraction of available functionality is shown.  Consult the reference documentation to learn more
+        about the other features, such as interactivity, events, traces, and progress reporting.
+      </p></div><h3 class="quickLinkHeader">Defining nodes and behaviors</h3><div><ol><li><p>
+              Define a concrete message class (complex workflows might need more than one), and concrete node state classes.
+              Node state parametrizes the node.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">[DataContract]
+class IntMessage : GraphMessage {
+    // Serialization
+    static IntMessage() {
+        KnownTypes.Add(typeof(IntMessage));
+    }
+
+    [DataMember]
+    public int Data;
+}
+
+[DataContract]
+class CustomSourceState : SourceNodeState&lt;IntMessage&gt;
+{
+    public CustomSourceState(Type implementingClass) : base(implementingClass) { }
+
+    [DataMember]
+    public int Increment;
+
+    [DataMember]
+    public int Count;
+}
+
+[DataContract]
+class CustomTransformState : TransformNodeState&lt;IntMessage, IntMessage&gt;
+{
+    public CustomTransformState(Type implementingClass) : base(implementingClass) { }
+
+    [DataMember]
+    public int Constant;
+}
+
+// Drain state MUST accept GraphMessage
+class CustomDrainState : TransformNodeState&lt;GraphMessage&gt;
+{
+    public CustomDrainState(Type implementingClass) : base(implementingClass) { }
+    // Empty, but the base is abstract.
+}</code></pre></div></div><p>
+              Drain node must be able to accept any message occurring in graph and must therefore be defined as accepting the
+              base class, <a href="00ac4d3b-25d4-8347-2215-9b7c7f989c77.htm">GraphMessage</a>.
+            </p><p>
+              The classes also illustrate how to integrate with the serialization (attributes, static constructor) framework.
+              Nodes do not need the static constructor because the base class is generic and can do it automatically.
+              Serialization bits can be omitted when not needed.
+            </p></li><li><p>
+              Define classes for node behavior.  The graph framework is designed with asynchronous operation in mind, but here
+              we have no asynchronous work to do, so we just return <span class="code">Task.CompletedTask</span>.  Note that each
+              node can access its state data (defined in previous step) through <a href="38fd059a-11a6-2a43-e084-b34f1f8e97c7.htm">State</a>
+              member.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">class CustomSourceNode : SourceNode&lt;CustomSourceState, IntMessage&gt;
+{
+    public CustomSourceNode(ILifetimeScope lifetimeScope, GraphShell owner, CustomSourceState state)
+        : base(lifetimeScope, owner, state) { }
+
+    protected override int ConcurrencyLimit =&gt; int.MaxValue;
+
+    protected override async IAsyncEnumerable&lt;IntMessage&gt; GenerateAsync() {
+        for (var i = 0; i &lt; State.Count; ++i)
+            yield return new() { Data = i * State.Increment };
+    }
+}
+
+class CustomTransformNode : TransformNode&lt;CustomTransformState, IntMessage, IntMessage&gt;
+{
+    public CustomTransformNode(ILifetimeScope lifetimeScope, GraphShell owner, CustomTransformState state)
+        : base(lifetimeScope, owner, state) { }
+
+    protected override int ConcurrencyLimit =&gt; int.MaxValue;
+
+    // DO NOT modify the message in place.  In real-world workflows, the sam message can be enqueued at many input ports.
+    protected override Task ProcessAsync(IntMessage message) {
+        Console.WriteLine($"{GetType().Name}{PathId} RECEIVED: {message.Data}");
+        Output0.Enqueue(new() { Data = message.Data - State.Constant });
+        return Task.CompletedTask;
+    }
+}
+
+class CustomDrainNode : DrainNode&lt;CustomDrainState&gt;
+{
+    public CustomDrainNode(ILifetimeScope lifetimeScope, GraphShell owner, CustomDrainState state)
+        : base(lifetimeScope, owner, state) { }
+
+    protected override int ConcurrencyLimit =&gt; int.MaxValue;
+
+    // Base implementation is a no-op.  Here we know that only a single message type exists in the graph.
+    protected override Task ProcessAsync(GraphMessage message) {
+        var typed = (IntMessage)message;
+        Console.WriteLine($"{GetType().Name}{PathId} RECEIVED: {typed.Data}");
+        return Task.CompletedTask;
+    }
+}</code></pre></div></div><p><span class="code">MaxConcurrency</span> is a framework feature that limits how many nodes of the same type
+              (as in <span class="code">GetType()</span>) can be simultaneously active in a lifetime scope.  Depending from
+              which scope an instance of <a href="feb4e4f1-2366-4ba8-1daa-7ff0715890c8.htm">NodeConcurrencyLimiter</a>
+              is resolved, the limitation may apply either to a single graph, the whole process, or something in between.
+            </p></li></ol></div><h3 class="quickLinkHeader">Building and running a graph</h3><div><ol><li><p>
+              Prepare an <strong>Autofac</strong> container (or scope) with node behavior types.
+              Make sure to register the framework types with the scopes as below.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">private GraphSample() {
+    var cb = new ContainerBuilder();
+
+    // Node behaviors.
+    cb.RegisterType&lt;CustomSourceNode&gt;().AsSelf();
+    cb.RegisterType&lt;CustomTransformNode&gt;().AsSelf();
+    cb.RegisterType&lt;CustomDrainNode&gt;().AsSelf();
+
+    // Always needed by the framework.  A scope MUST be created for each graph run.
+    cb.RegisterType&lt;GraphShell&gt;().InstancePerLifetimeScope();
+    cb.RegisterType&lt;NodeConcurrencyLimiter&gt;().AsSelf().SingleInstance();
+
+    container = cb.Build();
+}</code></pre></div></div></li><li><p>
+              Create node states and connections.  Note how the nodes' states are customized with input from the command line.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">private GraphState BuildGraph() {
+    var s = new CustomSourceState(typeof(CustomSourceNode)) {
+        Increment = increment,
+        Count = count
+    };
+    var t = new CustomTransformState(typeof(CustomTransformNode)) {
+        Constant = constant
+    };
+    var d = new CustomDrainState(typeof(CustomDrainNode));
+
+    s.Output0.Connect(t.Input0);
+    t.Output0.Connect(d.Input0);
+
+    var g = new GraphState();
+    g.Nodes.AddRange([s, t, d]);
+    return g;
+}</code></pre></div></div><p>
+              The code might seem cumbersome, but users interacted with this through an UI to create own workflow templates.
+              These were deserialized from the project database and customized through UI before each run.
+            </p></li><li><p>
+              The graph needs an "owner" which is an instance of <a href="cef45db4-50e9-36e3-2292-f55f7c90fa00.htm">ITreeIdentity</a>.
+              In QI, this was used to route events from concurrently running graphs to the correct "place" in the UI.  For simplicity,
+              we implement the interface on the sample class itself.  QI had a separate "job manager" instance that provided unique
+              identities to each job.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">ITreeIdentity ITreeIdentity.Owner =&gt; null;
+TreePathId ITreeIdentity.PathId =&gt; default;
+int Schemas.Core.IIdentity&lt;int&gt;.Id =&gt; 0;</code></pre></div></div><p>
+              The implementation above is suitable for implementing a "root" identity.
+            </p></li><li><p>
+              Tie it all together by creating a DI scope for the run, instantiating <a href="22e149aa-a392-da1b-236b-dd265e0f407e.htm">GraphShell</a>
+              from the scope and running the graph.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">private async Task RunAsync()
+{
+    // Create state and set the graph's ID within the parent.
+    var graphState = BuildGraph();
+    graphState.SetId(this, 1);
+
+    // Create a scope for the graph run and register the state instance and "owner".
+    // Remember that GraphShell MUST be registered with per lifetime scope.
+    using (var scope = container.BeginLifetimeScope(cb =&gt; {
+        cb.RegisterInstance(graphState);
+        cb.RegisterInstance(this).As&lt;ITreeIdentity&gt;();
+    })) {
+        var graphShell = scope.Resolve&lt;GraphShell&gt;();
+        graphShell.Build(); // IMPORTANT!
+        await graphShell.RunAsync();
+        Console.WriteLine($"FINISHED, EXIT STATUS WAS: {graphShell.State.CompletionState}");
+    }
+}</code></pre></div></div><p>
+              Neither <span class="code">GraphState</span> nor node states may be reused after a completed run because each run
+              records a trace in <a href="3eebe16d-d4fe-271d-8c2a-05f1ab9b55be.htm">Trace</a>.
+              As mentioned elsewhere, QI was a batch execution system.
+            </p></li></ol></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Compiling the Code</h2><div id="IDEABSection"><p>
+          Use Visual Studio to build the solution.  Then run it from the command line as below and you should observe output similar to this:
+        </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle"> </span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-plaintext">Quine.Samples.exe GraphSample 5 3 4
+
+CustomTransformNode{TreePathId`.0.1.3} RECEIVED: 0
+CustomDrainNode{TreePathId`.0.1.4} RECEIVED: -4
+CustomTransformNode{TreePathId`.0.1.3} RECEIVED: 3
+CustomDrainNode{TreePathId`.0.1.4} RECEIVED: -1
+CustomTransformNode{TreePathId`.0.1.3} RECEIVED: 6
+CustomDrainNode{TreePathId`.0.1.4} RECEIVED: 2
+CustomTransformNode{TreePathId`.0.1.3} RECEIVED: 9
+CustomDrainNode{TreePathId`.0.1.4} RECEIVED: 5
+CustomTransformNode{TreePathId`.0.1.3} RECEIVED: 12
+CustomDrainNode{TreePathId`.0.1.4} RECEIVED: 8
+FINISHED, EXIT STATUS WAS: Completed</code></pre></div></div><p>
+          Note how the ID of each node starts with <span class="code">.0.1</span>; 0 is the ID of the parent, provided by the
+          implementation of <span class="code">ITreeIdentity</span>, whereas 1 is provided by the call to <span class="code">SetId</span>.
+          This call automatically assigns IDs to graph elements (nodes and ports).
+        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Robust Programming</h2><div id="IDFABSection"><p>
+          When designing new nodes and behaviors, strive to make them reusable: they should not assume anything about their
+          predecessors and successors.
+        </p><p>
+          Do NOT modify incoming messages in-place because the same message can be buffered at multiple input ports.
+          ALWAYS create a new message instance for sending to output port.
+        </p><p>
+          Every received message is considered as a "unit" on which it is possible to report progress with <a href="2060c081-b032-1d1d-0e75-a0eb4b921efc.htm">RaiseProgressEvent</a>.
+          Errors that occur during processing should be signaled by an exception, which is caught by the framework and will cause
+          <a href="d75104d2-c4d6-1da3-cc29-fa7c24e149af.htm">CompletionState</a> to be
+          set to <a href="f0217b00-7e50-0a2b-4349-4ac8930e8f72.htm">Error</a>
+          upon completed execution.
+        </p><p>
+          In some situation, a node must buffer all received messages before producing any output.  To do this, you must in
+          addition override
+          <a href="dac5dd0c-613a-1d86-1b1e-2f6db40bcb20.htm">MessageLoopAsync</a>
+          as follows:
+        </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">try {
+    await base.MessageLoopAsync()
+} catch (ChannelClosedException) {
+    // Process buffered messages, write to outputs.
+    throw;  // IMPORTANT!
+}</code></pre></div></div><p>
+          Re-throwing the exception is critical for graph termination.  Also, be sure to catch <span class="code">Quine.Graph.ChannelClosedException</span>:
+          an exception with the same name exists also in <span class="code">System.Threading.Channels</span> namespace.
+        </p></div></div><div id="InThisArticleColumn" class="column is-hidden-mobile"><nav class="menu sticky is-hidden"><p class="menu-label"><strong>In This Article</strong></p><ul id="InThisArticleMenu" class="menu-list"><li><a class="quickLink">Defining nodes and behaviors</a></li><li><a class="quickLink">Building and running a graph</a></li><li><a class="quickLink">Compiling the Code</a></li><li><a class="quickLink">Robust Programming</a></li></ul></nav></div></div></div><footer id="PageFooter" class="footer border-top py-3 fixedFooter"><div class="columns"><div id="FooterContent" class="column"><p><a href="(c) 2024-2025 Stian Z. Vrba" target="_blank" rel="noopener noreferrer">(c) 2024-2025 Stian Z. Vrba</a></p> 
+				</div></div></footer></div><script>$(function(){
+SetDefaultLanguage("cs");
+LoadTocFile(null, null);
+InitializeQuickLinks();
+
+$(".toggleSection" ).click(function () {
+    SectionExpandCollapse(this);
+});
+
+$(".toggleSection").keypress(function () {
+    SectionExpandCollapseCheckKey(this, event)
+});
+hljs.highlightAll();
+});</script></body></html>

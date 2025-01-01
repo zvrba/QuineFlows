@@ -1,0 +1,67 @@
+﻿<!DOCTYPE html ><html lang="en-US"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="shortcut icon" href="../icons/favicon.ico" /><link rel="stylesheet" href="../css/bulma.css" /><link rel="stylesheet" href="../css/font-awesome.min.css" /><link rel="stylesheet" href="../css/presentationStyle.css" /><link rel="stylesheet" href="../css/vs.min.css" /><script src="../scripts/jquery-3.5.1.min.js"></script><script src="../scripts/clipboard.min.js"></script><script src="../scripts/highlight.min.js"></script><script src="../scripts/presentationStyle.js"></script><title>Watch folders</title><meta name="Title" content="Watch folders" /><meta name="Help.Id" content="b02f0abf-04d5-4866-bba1-1b87ddf57238" /><meta name="Help.ContentType" content="Concepts" /><meta name="guid" content="b02f0abf-04d5-4866-bba1-1b87ddf57238" /><meta name="Description" content="QI included an advanced &quot;watch folder&quot; functionality that was used to trigger automation jobs. It came as a surprise to us that users devised workflows as in the figure below." /><meta name="tocFile" content="../toc/IDA.xml" /></head><body><div class="fixedLayout"><div id="Header" class="fixedHeader"><div class="pageHeader level mb-0 py-2 px-4"><div id="TitleContainer" class="level-left"><div class="level-item"><img src="../icons/Help.png" /></div><div id="DocumentationTitle" class="level-item">Quine libraries user's guide</div></div><div id="LangFilterSearchContainer" class="level-right"><div class="level-item"><div class="dropdown is-hoverable"><div class="dropdown-trigger"><button class="button" aria-haspopup="true" aria-controls="dropdown-menu"><span id="CurrentLanguage"></span><span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span></button></div><div class="dropdown-menu" role="menu"><div id="LanguageSelections" class="dropdown-content"><a class="dropdown-item languageFilterItem" data-languageId="cs">C#</a></div></div></div></div><div class="level-item"><form id="SearchForm" action="#" onsubmit="TransferToSearchPage(); return false;"><div class="field"><div class="control has-icons-left"><input id="SearchTerms" class="input" type="text" maxlength="200" placeholder="Search" /><span class="icon is-small is-left"><i class="fa fa-search"></i></span><button id="SearchButton" type="submit" class="is-hidden"></button></div></div></form></div></div></div></div><div class="fixedContent"><nav class="breadcrumb my-1 px-2 border-bottom" role="navigation"><ul id="TopicBreadcrumbs" /></nav><div id="ContentContainer" class="columns pl-5 pr-5 fixedContent"><div id="ShowHideTOCColumn" class="column is-hidden-tablet"><a id="ShowHideTOC">Show/Hide TOC</a></div><div id="TOCColumn" class="column is-hidden-mobile"><nav class="toc"><ul id="TableOfContents" class="toc-menu" /></nav></div><div id="Resizer" class="is-hidden"></div><div id="TopicContent" class="column content is-7"><h1>Watch folders</h1><div><p>
+        QI included an advanced "watch folder" functionality that was used to trigger automation jobs.  It came as a surprise to us
+        that users devised workflows as in the figure below.
+        A dedicated workstation was used to ingest original files into the project folder, but that machine didn't have the resources
+        to transcode them in reasonable time.  A dispatcher watched the project folder and when a <em>stable</em> file appeared,
+        it dispatched the transcode job to a render farm.  The transcode output was put into <em>another</em> folder, again watched
+        by the ingest station.  It picked up the transcoded files, uploaded to cloud and stored metadata in the project database, whcih in
+        turn made the clips vieweable in our web application.  Such setups worked correctly also with multiple ingest stations thanks to the central "project database".
+      </p><figure class="mediaNear"><figcaption>Ad-hoc distributed system through watch folders</figcaption><img alt="Render Farm" src="../media/RenderFarm.png" /></figure><p>
+        The initial implementation of watched folders used <a href="https://learn.microsoft.com/dotnet/api/system.io.filesystemwatcher" target="_top" rel="noopener noreferrer">FileSystemWatcher</a>,
+        which receives change events from the OS.  We quickly learned that events got frequently lost, which was not acceptable because
+        watched folders were used to trigger jobs in QI.  Because lost events could only be compensated for by iterating through all directories
+        from the root of the watched hierarchy, we completely gave up on <a href="https://learn.microsoft.com/dotnet/api/system.io.filesystemwatcher" target="_top" rel="noopener noreferrer">FileSystemWatcher</a>
+        and implemented a watcher based purely on <em>periodic polling</em>.
+      </p><p>
+        Another challenge which we had to tackle were <em>growing files</em>: a job should be triggered only when the file is
+        "finished".  Because processes that generated files appended to them continuously (without pauses, albeit maybe slowly), the
+        periodic poller considered a file as <em>stable</em> if its size didn't change between two consecutive polls.
+      </p></div><h2 id="Concepts" class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Concepts</h2><div id="IDCABSection"><p>
+          File watcher is built around a <em>watch tree</em> that monitors multiple paths for new files and extracts metadata
+          from path components, as defined by the individual tree nodes.  In the figure below, the tree is set up to monitor for new files
+          in the following two locations:
+        </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-cs">A/$(DayNumber)/$(Key)
+B/$(OtherKey)</code></pre></div></div><figure class="mediaNear"><figcaption>File Watcher</figcaption><img alt="File Watcher" src="../media/FileWatcher.png" /></figure><p>
+          The tree is created with respect to an unspecified parent, and must be configured with a concrete filesystem path which
+          replaces the "ROOT" node.  This will be explained in the walkthrough.  Somewhat unfortunately, all three kinds of nodes
+          are created with <a href="ce685731-ba4c-fa65-5356-89a30f4071d2.htm">MakeChild</a>
+          method.  Each node "matches" its respective part of the path and extracts metadata according to its kind.  The match must
+          be unique: any path component must be matched by at most one node.
+        </p><p>
+          A fully configured watch tree (see <a href="33de28d1-5dff-682f-74b7-2e9d6ef7dd6f.htm">Clone</a>)
+          can be queried for new files with <a href="06ccc0b6-e094-84b9-7d42-fdb49dd9c97a.htm">Walk</a>
+          method.  It reports only <em>stable</em> files, i.e., those whose size has not changed upon two consecutive calls.
+        </p><dl><dt>Constant node</dt><dd><p>
+              Matches its path component literally.
+            </p></dd><dt>Parameter node</dt><dd><p>
+              Matches its path component with the provided parser.  The object returned by the parser is available in the result's
+              dictionary under the name of the parameter.
+            </p></dd><dt>Leaf node</dt><dd><p>
+              Extracts the file list in the directory matched by its immediate parent node.  A <span class="code">null</span>
+              parser and an arbitrary object (though NOT <span class="code">null</span>) must be provided to <span class="code">MakeChild</span>.
+            </p></dd></dl><p /><article class="message is-warning"><div class="message-header"><p><span class="icon"><i class="fa fa-warning"></i></span>  Important</p></div><div class="message-body"><p>
+            File and directory names are treated case-insensitively!
+          </p><p>
+            Beware: the code currently does not check for duplicate key names along the same root-to-leaf path.
+          </p></div></article><p>
+          The figure also illustrates limitations (the red nodes are disallowed).  Only constant nodes may have siblings,
+          and those must also be constant nodes.  Parameter node cannot have other siblings because the parser may match
+          arbitrary complex strings, so it's not possible to ensure that a name is matched by exactly one node.  Leaf nodes
+          cannot have children and cannot be siblings of other nodes.
+        </p><p>
+          The last limitation is an artifact of how QI was used in practice.  It is relatively easy to modify the code to lift it.
+        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>See Also</h2><div id="seeAlsoSection"><h4>Other Resources</h4><div><a href="e1463f72-c094-4da9-af2c-9aa122048d2c.htm">Getting started with FileWatcher</a></div></div></div><div id="InThisArticleColumn" class="column is-hidden-mobile"><nav class="menu sticky is-hidden"><p class="menu-label"><strong>In This Article</strong></p><ul id="InThisArticleMenu" class="menu-list"><li><a class="quickLink">Concepts</a></li><li><a class="quickLink">See Also</a></li></ul></nav></div></div></div><footer id="PageFooter" class="footer border-top py-3 fixedFooter"><div class="columns"><div id="FooterContent" class="column"><p><a href="(c) 2024-2025 Stian Z. Vrba" target="_blank" rel="noopener noreferrer">(c) 2024-2025 Stian Z. Vrba</a></p> 
+				</div></div></footer></div><script>$(function(){
+SetDefaultLanguage("cs");
+LoadTocFile(null, null);
+InitializeQuickLinks();
+
+$(".toggleSection" ).click(function () {
+    SectionExpandCollapse(this);
+});
+
+$(".toggleSection").keypress(function () {
+    SectionExpandCollapseCheckKey(this, event)
+});
+hljs.highlightAll();
+});</script></body></html>

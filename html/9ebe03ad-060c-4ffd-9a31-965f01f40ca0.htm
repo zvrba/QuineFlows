@@ -1,0 +1,174 @@
+﻿<!DOCTYPE html ><html lang="en-US"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="shortcut icon" href="../icons/favicon.ico" /><link rel="stylesheet" href="../css/bulma.css" /><link rel="stylesheet" href="../css/font-awesome.min.css" /><link rel="stylesheet" href="../css/presentationStyle.css" /><link rel="stylesheet" href="../css/vs.min.css" /><script src="../scripts/jquery-3.5.1.min.js"></script><script src="../scripts/clipboard.min.js"></script><script src="../scripts/highlight.min.js"></script><script src="../scripts/presentationStyle.js"></script><title>Getting started with FileTransfer</title><meta name="Title" content="Getting started with FileTransfer" /><meta name="Help.Id" content="9ebe03ad-060c-4ffd-9a31-965f01f40ca0" /><meta name="Help.ContentType" content="How To" /><meta name="guid" content="9ebe03ad-060c-4ffd-9a31-965f01f40ca0" /><meta name="Description" content="This sample shows the basic setup needed to copy a local file to one or more destinations with verification of the copied date. The complete sample is in Quine.Samples\CopyDirectory.cs." /><meta name="tocFile" content="../toc/IDB.xml" /></head><body><div class="fixedLayout"><div id="Header" class="fixedHeader"><div class="pageHeader level mb-0 py-2 px-4"><div id="TitleContainer" class="level-left"><div class="level-item"><img src="../icons/Help.png" /></div><div id="DocumentationTitle" class="level-item">Quine libraries user's guide</div></div><div id="LangFilterSearchContainer" class="level-right"><div class="level-item"><div class="dropdown is-hoverable"><div class="dropdown-trigger"><button class="button" aria-haspopup="true" aria-controls="dropdown-menu"><span id="CurrentLanguage"></span><span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span></button></div><div class="dropdown-menu" role="menu"><div id="LanguageSelections" class="dropdown-content"><a class="dropdown-item languageFilterItem" data-languageId="cs">C#</a></div></div></div></div><div class="level-item"><form id="SearchForm" action="#" onsubmit="TransferToSearchPage(); return false;"><div class="field"><div class="control has-icons-left"><input id="SearchTerms" class="input" type="text" maxlength="200" placeholder="Search" /><span class="icon is-small is-left"><i class="fa fa-search"></i></span><button id="SearchButton" type="submit" class="is-hidden"></button></div></div></form></div></div></div></div><div class="fixedContent"><nav class="breadcrumb my-1 px-2 border-bottom" role="navigation"><ul id="TopicBreadcrumbs" /></nav><div id="ContentContainer" class="columns pl-5 pr-5 fixedContent"><div id="ShowHideTOCColumn" class="column is-hidden-tablet"><a id="ShowHideTOC">Show/Hide TOC</a></div><div id="TOCColumn" class="column is-hidden-mobile"><nav class="toc"><ul id="TableOfContents" class="toc-menu" /></nav></div><div id="Resizer" class="is-hidden"></div><div id="TopicContent" class="column content is-7"><h1>Getting started with FileTransfer</h1><div><p>
+        This sample shows the basic setup needed to copy a local file to one or more destinations
+        with verification of the copied date.  The complete sample is in <span class="code">Quine.Samples\CopyDirectory.cs</span>.
+      </p></div><h3 class="quickLinkHeader">Simple copying</h3><div><ol><li><p>
+              Create an instance of the driver, producer and consumers.  In this example, everyhting is "static", i.e., known upfront.
+              The only parameter needed for the set up is the number of destinations.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">// Pool and driver
+private readonly TransferDriver driver;
+
+// Producer and consumers
+private readonly UnbufferedFile.Reader reader;
+private readonly UnbufferedFile.Writer[] writers;
+
+private CopyDirectory(int dstcount) {
+    // 16 blocks of 2MB; should be sufficient to saturate common SSDs.
+    driver = new(2 &lt;&lt; 20, 16);
+
+    reader = new UnbufferedFile.Reader();
+    writers = Enumerable.Range(0, dstcount)
+        .Select(x =&gt; new UnbufferedFile.Writer())
+        .ToArray();
+
+    driver.Producer = reader;
+    driver.Consumers = writers;
+
+    // configure hash verification
+    driver.HasherFactory = () =&gt; new XX64TransferHash();
+    driver.VerifyHash = true;
+}
+
+// Once the pool has been disposed, the driver becomes unusable.
+public void Dispose() =&gt; driver.Dispose();</code></pre></div></div><p>
+              Because producer and consumer instance are meant to be reusable, we keep explicit references to them. They are also accessible
+              through <a href="dfd167d1-7ce1-234f-f9cd-16e5662810c8.htm">Producer</a>
+              and <a href="e5f64461-9762-627a-5360-68ceec86093d.htm">Consumers</a> properties
+              on <span class="code">driver</span> instance, but these properties have weaker (interface) types.
+            </p></li><li><p>
+              To copy a single file, the producer and consumers must be configured first; in this case: setting up source and destination
+              paths. Second, we execute the transfer. Third, we report any errors.
+            </p><p>
+              The code relies on <a href="64e01fb7-853b-21d5-9d21-49504376bcc9.htm">PathComponents</a>
+              helper to easily manipulate paths.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">// Source and destination paths
+private PathComponents srcPath;
+private PathComponents[] dstPaths;
+
+private async Task CopyFile(string srcFileName) {
+    // 1: Set up reader and writers to point to source / destinations.
+    // For local files, we just use the file's path.
+    reader.FilePath = srcPath.Append(srcFileName).NativeString;
+    foreach (var x in writers.Zip(dstPaths))
+        x.First.FilePath = x.Second.Append(srcFileName).NativeString;
+
+    // 2: Execute copy.  We don't support cancellation in this program.
+    await driver.ExecuteAsync(default);
+
+    // 3: Check for errors and report.
+    var anyerror = false;
+    if (reader.State.Exception is not null) {
+        Console.WriteLine($"ERROR: reading file {reader.FilePath}: {reader.State.Exception.Message}");
+        anyerror = true;
+    }
+    foreach (var w in writers.Where(x =&gt; x.State.Exception is not null)) {
+        Console.WriteLine($"ERROR: writing file {w.FilePath}: {w.State.Exception!.Message}");
+        anyerror = true;
+    }
+    if (!anyerror)
+        Console.WriteLine($"OK: copied {reader.FilePath} to all destinations.");
+}</code></pre></div></div><p>
+              In this example, the destination file name is the same as the source file name, but more complex logic can also be
+              implemented (e.g., change the destination file name if the file already exists).
+            </p></li><li><p>
+              The entry point, called from <span class="code">Main</span>, ties all the parts together.  First, we create an instance
+              to hold the parts that will be <em>reused</em> for copying of individual files (described above).  Then, we perform basic validation
+              on the paths so that we don't accidentally overwrite valuable data. Third, we enumerate (non-recursively) individual
+              files in the directory and copy it to the destination(s).
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">public static async Task ExecuteAsync(DirectoryInfo src, DirectoryInfo[] dst) {
+    // Create the "holder" for pool and driver.
+    using var copier = new CopyDirectory(dst.Length);
+
+    // Initialize paths.
+    copier.srcPath = PathComponents.Make(src.FullName);
+    copier.dstPaths = dst.Select(x =&gt; PathComponents.Make(x.FullName)).ToArray();
+
+    // It is wise to allow only absolute paths for security reasons: relative paths might open up for overwriting arbitrary files.
+    // (A full SMB paths is also considered absolute.)
+    if (!copier.srcPath.IsAbsolute || copier.dstPaths.Any(x =&gt; !x.IsAbsolute))
+        throw new InvalidOperationException("All paths must be absolute.");
+
+    // Use the same instances of driver and workers to copy many files.
+    foreach (var file in src.EnumerateFiles()) {
+        // IMPORTANT! The driver can copy only a single file at a time.  DO NOT spawn multiple copies in parallel.
+        await copier.CopyFile(file.Name);
+    }
+
+    // Driver is no longer usable after disposal.
+}</code></pre></div></div></li></ol></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Compiling the Code</h2><div id="IDDABSection"><p>
+          Build the solution with Visual Studio.  Open a command line and execute a command like the following to non-recursively
+          copy a directory <span class="code">TestFiles</span> to two destination directories.  Absolute paths must be used.
+        </p><article class="message is-warning"><div class="message-header"><p><span class="icon"><i class="fa fa-warning"></i></span>  Caution</p></div><div class="message-body"><p>
+            Make sure to use scrap destination directories. The sample will UNCODNITIONALLY OVERWRITE any
+            existing files in the destination directories, if their names match the source files' names.
+          </p></div></article><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle"> </span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-plaintext">Quine.Samples.exe CopyDir "C:\TEMP\TestFiles" D:\Dest1 D:\Dest2</code></pre></div></div></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Robust Programming</h2><div id="IDEABSection"><p>
+          Driver, producer and consumer instances are meant to be reused for many individual file transfers.  The driver allocates
+          native memory, which is freed when the driver is disposed.
+        </p><p>
+          DO expect partial failures, i.e., that the file has been copied to only a subset of destinations.  The following is a list
+          of commonly encountered sources of <em>hard errors</em> that occurred in practice durig copying large amounts of data (100+ GB):
+        </p><ul><li><p>No space left on a destination.</p></li><li><p>Permissions problem on a destination.</p></li><li><p>
+              Bad USB cables will cause data corruption and hash verification errors.  I cannot remember that data corruption
+              was ever detected by the OS.
+            </p></li><li><p>
+              (Temporary) loss of network connectivity while copying from/to SMB-mounted drives.
+            </p><article class="message is-info"><div class="message-header"><p><span class="icon"><i class="fa fa-info-circle"></i></span>  Note</p></div><div class="message-body"><p>
+                On OSX and Linux, and depending on the mount options, the process may end up in the infamous "uninterruptible
+                sleep" state when the network outage lasts long enough.  Windows, however, will eventually return an error
+                to the program.
+              </p><p>
+                One way of coping with this is <em>decorator pattern</em> which introduces a timeout for
+                individual I/O operation.
+              </p></div></article></li><li><p>
+              (Uncommon, but confirmed with <strong>memtest86</strong>): memory corruption, which will also result in a hash verification error.
+              Unless you have ECC memory, this type of corruption cannot be detected by the OS.
+            </p></li></ul><p>
+          Especially when dealing with network drives or other "external" storage, DO be prepared for <em>soft errors</em>.  Technically,
+          the network might be present, but degraded to, for example, 1/10th of normal bandwidth.  This will in turn cause 10-fold increase in
+          transfer time, which might be classified as "unusable" in some scenarios.  Again, use decorator pattern to introduce
+          timeouts, cancel the transfer and report an error.
+        </p><article class="message is-warning"><div class="message-header"><p><span class="icon"><i class="fa fa-warning"></i></span>  Important</p></div><div class="message-body"><p>
+            In conclusion, DO use hash verification when copying valuable data.  It prolongs the copying, but by less than double the time
+            because reading from disks is usually faster than writing.
+          </p></div></article><p>
+          Buffer pool parameters (provided to <a href="0126e38a-fc2d-9693-2587-be2d601db2d6.htm">TransferDriver</a>)
+          and producer/consumer concurrency levels affect performance (i.e., total transfer time), but choosing them is tricky.
+          At the time being, <a href="0a2c74b3-4574-9e50-4ba1-634496290db9.htm">UnbufferedFile</a> reader
+          and writer support only serial operation, and the buffer pool parameters in the example should be enough to saturate common SSDs.
+        </p><p>
+          To extract performance from media other than SSDs, two factors must be accounted for: bandwidth and latency.  Larger buffer size
+          gives better bandwidth utilization, higher concurrency hides latency better, while higher pool capacity (more buffers) aids in
+          hiding differences among producer and consumers.  Too high concurrency may have negative impact on transfer times
+          (when concurrent requests exceed available bandwidth), while too many buffers may consume excessive memory.
+        </p><article class="message is-info"><div class="message-header"><p><span class="icon"><i class="fa fa-info-circle"></i></span>  Note</p></div><div class="message-body"><p>
+            A rather extreme example of a setup that we encountered in real-life and for which it was tricky to choose parameters:
+            simultaneosuly copying from a USB3 or USB2 (!) disk to 1) an on-prem NAS attached to 10Gbit network, 2) Azure BLOB storage,
+            over the same 10Gbit network.
+          </p></div></article><p>
+          The library currently supports only constant concurrency levels, i.e., they may be set only before starting an individual transfer,
+          but cannot be adjusted during the transfer (through some kind of feedback loop).  For fixed setup and huge amounts of data,
+          it is wise to perform some experiments upfront to determine the best combination of parameters. (This could also be done "online"
+          by running some kind of ML between transfers of individual files.)
+        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Security</h2><div id="IDFABSection"><p>
+          File copying can be destructive.  <a href="0a2c74b3-4574-9e50-4ba1-634496290db9.htm">UnbufferedFile</a>
+          reader and writer accept any path that the OS deems valid.  In production, and as shown in the above sample, you should always work with absolute paths.
+          QI also disallowed writing to the "root" path, i.e., <span class="code">/</span> under UNIX and <span class="code">X:\</span>
+          (for any drive letter) under Windows.
+        </p><p>
+          Apply the above guideline also when working with "external" files, such as BLOB storage or FTP servers.  References to external
+          resources can often be represented with a <span class="code">Uri</span> class (perhaps with a custom scheme); DO use its
+          <span class="code">IsAbsoluteUri</span> property.
+        </p></div></div><div id="InThisArticleColumn" class="column is-hidden-mobile"><nav class="menu sticky is-hidden"><p class="menu-label"><strong>In This Article</strong></p><ul id="InThisArticleMenu" class="menu-list"><li><a class="quickLink">Simple copying</a></li><li><a class="quickLink">Compiling the Code</a></li><li><a class="quickLink">Robust Programming</a></li><li><a class="quickLink">Security</a></li></ul></nav></div></div></div><footer id="PageFooter" class="footer border-top py-3 fixedFooter"><div class="columns"><div id="FooterContent" class="column"><p><a href="(c) 2024-2025 Stian Z. Vrba" target="_blank" rel="noopener noreferrer">(c) 2024-2025 Stian Z. Vrba</a></p> 
+				</div></div></footer></div><script>$(function(){
+SetDefaultLanguage("cs");
+LoadTocFile(null, null);
+InitializeQuickLinks();
+
+$(".toggleSection" ).click(function () {
+    SectionExpandCollapse(this);
+});
+
+$(".toggleSection").keypress(function () {
+    SectionExpandCollapseCheckKey(this, event)
+});
+hljs.highlightAll();
+});</script></body></html>

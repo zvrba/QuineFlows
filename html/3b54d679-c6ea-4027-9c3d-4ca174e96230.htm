@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html ><html lang="en-US"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="shortcut icon" href="../icons/favicon.ico" /><link rel="stylesheet" href="../css/bulma.css" /><link rel="stylesheet" href="../css/font-awesome.min.css" /><link rel="stylesheet" href="../css/presentationStyle.css" /><link rel="stylesheet" href="../css/vs.min.css" /><script src="../scripts/jquery-3.5.1.min.js"></script><script src="../scripts/clipboard.min.js"></script><script src="../scripts/highlight.min.js"></script><script src="../scripts/presentationStyle.js"></script><title>Core infrastructure</title><meta name="Title" content="Core infrastructure" /><meta name="Help.Id" content="3b54d679-c6ea-4027-9c3d-4ca174e96230" /><meta name="Help.ContentType" content="Concepts" /><meta name="guid" content="3b54d679-c6ea-4027-9c3d-4ca174e96230" /><meta name="Description" content="Quine.Schemas.Core assembly contains various utilities as well as the infrastructure for data management and exchange across all applications that comprised the PAM system, not just within QI." /><meta name="tocFile" content="../toc/IDA.xml" /></head><body><div class="fixedLayout"><div id="Header" class="fixedHeader"><div class="pageHeader level mb-0 py-2 px-4"><div id="TitleContainer" class="level-left"><div class="level-item"><img src="../icons/Help.png" /></div><div id="DocumentationTitle" class="level-item">Quine libraries user's guide</div></div><div id="LangFilterSearchContainer" class="level-right"><div class="level-item"><div class="dropdown is-hoverable"><div class="dropdown-trigger"><button class="button" aria-haspopup="true" aria-controls="dropdown-menu"><span id="CurrentLanguage"></span><span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span></button></div><div class="dropdown-menu" role="menu"><div id="LanguageSelections" class="dropdown-content"><a class="dropdown-item languageFilterItem" data-languageId="cs">C#</a></div></div></div></div><div class="level-item"><form id="SearchForm" action="#" onsubmit="TransferToSearchPage(); return false;"><div class="field"><div class="control has-icons-left"><input id="SearchTerms" class="input" type="text" maxlength="200" placeholder="Search" /><span class="icon is-small is-left"><i class="fa fa-search"></i></span><button id="SearchButton" type="submit" class="is-hidden"></button></div></div></form></div></div></div></div><div class="fixedContent"><nav class="breadcrumb my-1 px-2 border-bottom" role="navigation"><ul id="TopicBreadcrumbs" /></nav><div id="ContentContainer" class="columns pl-5 pr-5 fixedContent"><div id="ShowHideTOCColumn" class="column is-hidden-tablet"><a id="ShowHideTOC">Show/Hide TOC</a></div><div id="TOCColumn" class="column is-hidden-mobile"><nav class="toc"><ul id="TableOfContents" class="toc-menu" /></nav></div><div id="Resizer" class="is-hidden"></div><div id="TopicContent" class="column content is-7"><h1>Core infrastructure</h1><div class="summary"><p><strong>Quine.Schemas.Core</strong> assembly contains various utilities as well as the infrastructure for data management and exchange across
+        <em>all</em> applications that comprised the PAM system, not just within QI.
+      </p></div><div><p>
+        Development of QuineIngest (QI) began around 2020, when .NET Core 2.0 was current and there were no viable .NET options for
+        creating cross-platform UIs (QI was required to work on Windows and OSX).  QI was therefore developed as a two-tier desktop
+        application: a back-end in .NET Core, and a front-end in Java, running in separate processes.
+      </p><p>
+        This required us to find a serialization mechanism that 1) preserves types, 2) doesn't require us to duplicate type
+        definitions in Java, 3) ideally, avoids a 3rd IDL language.  Thus the choice fell on XML in combination with
+        <strong>DataContractSerializer</strong>.  "Master" schemas were defined as classes in C#, a small C# utility
+        was written to export XSD documents which were in turn compiled into Java classes with <strong>xjc</strong>
+        (part of <strong>JAXB</strong>).  IPC was anonymous pipes and the whole setup this worked like a charm.
+        With a bit of automation, it was easy to keep C# and Java classes in sync.
+      </p><p>
+        The above process is the main reason for having separate "schema" assemblies: XSD could be exported only from a .NET Framework
+        application and therefore they originally targetted .NET Standard 2.0.
+      </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Historical note (lesson learned)</h2><div id="IDCABSection"><p>
+          QI was developed with the following underlying philosophy:
+        </p><ul><li><p>Data is the master.  Everything known to the system exists in the project database.</p></li><li><p>There should be a single source of truth for every bit of information. (This was deviated from on a very few occasions.)</p></li></ul><p>
+          The philosophy was a great technical success, but because we were only two developers, the UI we built for QI reflected
+          our lack of resources.  The UI was <em>data-oriented</em>, i.e., it reflected the model of the underlying database.
+          It was the simplest kind of UI to build, and it could also be used as a debugging tool.  The plan was to redesign it when
+          we got more resources.  However...
+        </p><blockquote>
+          No solutions are as permanent as temporary ones.
+        </blockquote><p>
+          Data-oriented UI was, of course, not user-friendly: our end-users wanted to "just run" their workflows, without first
+          understanding QI's data model.  A couple of months before Quine shut down, and with the help of a UI/UX designer, we had
+          sketches of <em>action-oriented</em> UI for QI, which would be more intuitive to the users.  However, our funding
+          ran out, and this UI was never implemented.
+        </p><article class="message is-info"><div class="message-header"><p><span class="icon"><i class="fa fa-info-circle"></i></span>  Tip</p></div><div class="message-body"><p>Lesson learned, but too late: non-technical users want action-oriented UIs.</p></div></article></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Types of common interest</h2><div id="IDDABSection"><p><a href="64e01fb7-853b-21d5-9d21-49504376bcc9.htm">PathComponents</a> presents a file-system
+          path as a sequence of individual components.  It supports Windows and UNIX-style path separators as well as SMB paths and
+          provides utility operations such as removing a prefix or suffix of a path.  A peculiarity of <span class="code">PathComponents</span>
+          is that it disallows "forbidden characters" in file or directory names.  These are characters that are not supported on
+          all file-systems.
+        </p><p><a href="78f2cad1-4da6-995a-88a5-ee978385786e.htm">Guids</a> class contains static methods
+          for creating name-based GUIDs and conversions to BE byte arrays.
+        </p><p><a href="13bdbc3e-e685-3c22-5f18-12f116d3d75f.htm">ExternalProgramComponent</a> aids with
+          executing external processes.  Optionally, it can set up cancellation of a started external process.
+        </p><p><a href="a94ae897-63a8-fcbe-d5d4-edffa0d80021.htm">IContentAddressable</a> and related types
+          support calculation of a GUID from a content of some DTO.  This was used for value deduplication and value-based lookups in a
+          database.
+        </p><p><a href="b911c624-8053-6289-132f-82689fe9d751.htm">TimecodeRate</a> and
+          <a href="0c212eb5-e42e-2be6-7269-adb9fd406a41.htm">TimecodeTime</a> types support
+          calculations with SMPTE time codes.  This is a very bothersome way of specifying time (esp. when rates do not match),
+          so we invented the concept of <em>seconds since midnight (SSM)</em> which represents the time point as a
+          <span class="code">double</span> number.  <a href="d457d266-ca16-b9e7-4bde-94e785170d37.htm">TimelinePoint</a>
+          supports conversion from the SSM representation to traditional time codes.
+        </p><p><a href="0a45b09b-37e2-96a8-5666-70d4e2f3bd56.htm">NormalString<span id="LST9D24146B_0" data-languageSpecificText="cs=&lt;|vb=(Of |cpp=&lt;|nu=(|fs=&lt;'"></span>TStringTraits<span id="LST9D24146B_1" data-languageSpecificText="cs=&gt;|vb=)|cpp=&gt;|nu=)|fs=&gt;"></span></a> defines a "normal string"
+          value type, parametrized with "normalization traits", such as case-insensitivity, removal of repeated whitespace and
+          introducing "forbidden characters".
+        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Infrastructure types</h2><div id="IDEABSection"><p><strong>Quine.Schemas.Core</strong> contains many types that serve mostly as supporting infrastructure for QI and other components of the
+          system.  The reference section below outlines type that might be interesting to the general public, while the rest of
+          this section outlines the ideas behind the rest of the assembly. Many of the classes are only partly documented.
+        </p><p>
+          Types in <a href="2a5c86c0-cd04-18b2-1589-45548a6f7f18.htm">Quine.HRCatalog</a> and <a href="db7a47db-4b57-b6c6-b52b-2fa81ed1a752.htm">Quine.Schemas.Core.Eventing</a>
+          are designed to support persistence of "events" ("event" being used with the same meaning as in ETW).  Back-end would send some events
+          to the front-end (e.g., progress updates, errors), and persist some others to the database (e.g., errors and warnings).  This
+          made it possible to search through workflow runs and report on "what happened" during the run.  Events were assigned unique IDs
+          for two reasons:
+        </p><ol><li><p>
+              Easy to search and report on (vs. loosely matching on the message's content).  Frequently-occurring IDs pointed to areas
+              in need of improvement.
+            </p></li><li><p>
+              The plan was to have a web-site describing the error code in more detail and suggest possible corrective actions to the user.
+            </p></li></ol><p>
+          Types in <a href="e56dbebf-a812-e470-7fe3-789aeb3b4309.htm">Quine.Schemas.Core.Repository</a> comprise a micro-ORM.
+          It distinguishes itself from other ORMs by easy two-way binding (statement parameters, row sets) between model classes and SQL.
+          It also supports <em>multiple result sets</em> (not even EFCore9 supports it yet) which makes it easy to avoid
+          combinatorial explosion that'd result from complex joins.
+
+          <a href="5fb64513-04c5-d61d-5542-3a5622ad0f9e.htm">EntityCollection<span id="LST9D24146B_2" data-languageSpecificText="cs=&lt;|vb=(Of |cpp=&lt;|nu=(|fs=&lt;'"></span>TEntity<span id="LST9D24146B_3" data-languageSpecificText="cs=&gt;|vb=)|cpp=&gt;|nu=)|fs=&gt;"></span></a>
+          and <a href="c257ebe3-e7df-1169-d5ed-04a03a46b065.htm">QdbEvents</a>
+          help with creating observable, immutable caches of DB data.
+
+          To actually use the repository, you must subclass <a href="a00b3c30-f495-42e7-8428-859ef9373311.htm">TsqlDatabaseConnection</a>
+          which has been designed for use with SQLServer and VistaDB.
+        </p><p><a href="c64f31fd-cc5a-daf2-1a42-972714cb03fc.htm">DCSerializer</a> contains static utility methods
+          for serializing, deserializing and cloning instances of "known types".  It automatically loads known types from all assemblies
+          named <span class="code">Quine.Schemas.*.dll</span> from the application's directory and runs static constructors for all public
+          classes within them.
+          (Originally, the serialization used <a href="https://learn.microsoft.com/dotnet/api/system.xml.serialization.xmlserializer" target="_top" rel="noopener noreferrer">XmlSerializer</a>.
+          This was very cumbersome because it does not support common types (such as <span class="code">DateTimeOffset</span>) out of the box,
+          or object references.)
+        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Templated strings</h2><div id="IDGABSection"><p>
+          In media productions, people rely heavily on encoding metadata in file and directory names, which makes it
+          possible to quickly locate files of interest and enables semi-automation.
+          <a href="86ed9d35-f4f1-2601-f563-5ba030c7ce03.htm">TemplateVariableProcessor</a>
+          helps with parsing and creating of structured file paths using templates such as:
+          <span class="code">MEDIA/CLIP/$(Date)/$(Camera)$(Reel)_$(ClipNumber).R3D</span></p><p><a href="126812d4-2120-7950-761f-8534b1025d7b.htm">Replace</a>
+          method can be used to replace variables with values in a template string like the above.  Given the example template and
+          mapping defined by columns 1 and 2 in the table below, <span class="code">Replace</span> method would generate the following string:
+          <span class="code">MEDIA/CLIP/2024-12-28/B001_012.R3D</span>.
+        </p><p><a href="9687ad99-b54b-92e3-90df-a39b7fab5f03.htm">IsMatch</a>
+          performs the reverse operation: given 1) <span class="code">MEDIA/CLIP/2024-12-28/B001_012.R3D</span> as input string and
+          2) mapping defined by columns 1 and 3 in the table below, it would output the mapping as defined by columns 1 and 2 in the table.
+        </p><p>
+          The class currently contains some logic that is specific to path handling.  It is relatively easy to remove it.
+        </p><div class="caption">Example variable mappings for substitution and extraction</div><table class="table is-hoverable"><thead><tr><th><p>Variable</p></th><th><p>Value</p></th><th><p>Regex</p></th></tr></thead><tr><td><p>Date</p></td><td><p>2024-12-28</p></td><td><p>\d{4}-\d{2}-\d{2}</p></td></tr><tr><td><p>Camera</p></td><td><p>B</p></td><td><p>[A-Z]</p></td></tr><tr><td><p>Reel</p></td><td><p>001</p></td><td><p>\d{3}</p></td></tr><tr><td><p>ClipNumber</p></td><td><p>012</p></td><td><p>\d{3}</p></td></tr></table></div></div><div id="InThisArticleColumn" class="column is-hidden-mobile"><nav class="menu sticky is-hidden"><p class="menu-label"><strong>In This Article</strong></p><ul id="InThisArticleMenu" class="menu-list"><li><a class="quickLink">Historical note (lesson learned)</a></li><li><a class="quickLink">Types of common interest</a></li><li><a class="quickLink">Infrastructure types</a></li><li><a class="quickLink">Templated strings</a></li></ul></nav></div></div></div><footer id="PageFooter" class="footer border-top py-3 fixedFooter"><div class="columns"><div id="FooterContent" class="column"><p><a href="(c) 2024-2025 Stian Z. Vrba" target="_blank" rel="noopener noreferrer">(c) 2024-2025 Stian Z. Vrba</a></p> 
+				</div></div></footer></div><script>$(function(){
+SetDefaultLanguage("cs");
+LoadTocFile(null, null);
+InitializeQuickLinks();
+
+$(".toggleSection" ).click(function () {
+    SectionExpandCollapse(this);
+});
+
+$(".toggleSection").keypress(function () {
+    SectionExpandCollapseCheckKey(this, event)
+});
+});</script></body></html>

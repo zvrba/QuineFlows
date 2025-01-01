@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html ><html lang="en-US"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="shortcut icon" href="../icons/favicon.ico" /><link rel="stylesheet" href="../css/bulma.css" /><link rel="stylesheet" href="../css/font-awesome.min.css" /><link rel="stylesheet" href="../css/presentationStyle.css" /><link rel="stylesheet" href="../css/vs.min.css" /><script src="../scripts/jquery-3.5.1.min.js"></script><script src="../scripts/clipboard.min.js"></script><script src="../scripts/highlight.min.js"></script><script src="../scripts/presentationStyle.js"></script><title>Getting started with FileWatcher</title><meta name="Title" content="Getting started with FileWatcher" /><meta name="Help.Id" content="e1463f72-c094-4da9-af2c-9aa122048d2c" /><meta name="Help.ContentType" content="How To" /><meta name="guid" content="e1463f72-c094-4da9-af2c-9aa122048d2c" /><meta name="Description" content="This sample shows how to set up a file watcher for the hierarchy illustrated in . The complete sample is in Quine.Samples\WatchDirectory.cs." /><meta name="tocFile" content="../toc/IDB.xml" /></head><body><div class="fixedLayout"><div id="Header" class="fixedHeader"><div class="pageHeader level mb-0 py-2 px-4"><div id="TitleContainer" class="level-left"><div class="level-item"><img src="../icons/Help.png" /></div><div id="DocumentationTitle" class="level-item">Quine libraries user's guide</div></div><div id="LangFilterSearchContainer" class="level-right"><div class="level-item"><div class="dropdown is-hoverable"><div class="dropdown-trigger"><button class="button" aria-haspopup="true" aria-controls="dropdown-menu"><span id="CurrentLanguage"></span><span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span></button></div><div class="dropdown-menu" role="menu"><div id="LanguageSelections" class="dropdown-content"><a class="dropdown-item languageFilterItem" data-languageId="cs">C#</a></div></div></div></div><div class="level-item"><form id="SearchForm" action="#" onsubmit="TransferToSearchPage(); return false;"><div class="field"><div class="control has-icons-left"><input id="SearchTerms" class="input" type="text" maxlength="200" placeholder="Search" /><span class="icon is-small is-left"><i class="fa fa-search"></i></span><button id="SearchButton" type="submit" class="is-hidden"></button></div></div></form></div></div></div></div><div class="fixedContent"><nav class="breadcrumb my-1 px-2 border-bottom" role="navigation"><ul id="TopicBreadcrumbs" /></nav><div id="ContentContainer" class="columns pl-5 pr-5 fixedContent"><div id="ShowHideTOCColumn" class="column is-hidden-tablet"><a id="ShowHideTOC">Show/Hide TOC</a></div><div id="TOCColumn" class="column is-hidden-mobile"><nav class="toc"><ul id="TableOfContents" class="toc-menu" /></nav></div><div id="Resizer" class="is-hidden"></div><div id="TopicContent" class="column content is-7"><h1>Getting started with FileWatcher</h1><div><p>
+        This sample shows how to set up a file watcher for the hierarchy illustrated in <a href="b02f0abf-04d5-4866-bba1-1b87ddf57238.htm#Concepts">Watch folders</a>.
+        The complete sample is in <span class="code">Quine.Samples\WatchDirectory.cs</span>.
+      </p></div><h3 class="quickLinkHeader">Watching a directory hierarchy</h3><div><ol><li><p>
+              Create an "abstract tree".  Compare carefully the code with the figure <a href="b02f0abf-04d5-4866-bba1-1b87ddf57238.htm#Concepts">here</a>.
+              Note the use of parser for <span class="code">$(DayNumber)</span> key.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">// First we create an "abstract" hierarchy.
+var root = WatchNode.MakeRoot();
+var c1 = root.MakeChild(PathComponents.Make("A"));
+var c2 = c1.MakeChild(PathComponents.Make("$(DayNumber)"), GetDayNumber);
+var c3 = c2.MakeChild(PathComponents.Make("$(Key)"), null, "Value");
+var c4 = root.MakeChild(PathComponents.Make("B"));
+var c5 = c4.MakeChild(PathComponents.Make("$(OtherKey)"), null, "OtherValue");
+
+static bool GetDayNumber(string input, out object value) {
+    if (int.TryParse(input, out var v)) {
+        value = v;
+        return true;
+    }
+    value = null;
+    return false;
+}</code></pre></div></div><p>
+              The API is somewhat arcane because users defined watched folders interactively in the UI and saved the definition
+              in the project database.  Upon startup, QI would deserialize the definition and dynamically create the watch tree.
+              (<span class="code">WatchNode</span> itself is not serializable (parser delegate), so a separate data structure was
+              designed for that purpose.  It mapped predefined parameter names to fixed parser methods.)
+            </p></li><li><p>
+              Instantiate the tree.  The second argument is the path to the directory to watch (received as command-line argument), while the
+              third argument provides an error context.  In this example, <span class="code">WatchDirectory</span> itself implements
+              <a href="69f23747-b283-e5d9-0dbe-a27369702442.htm">IErrorContext</a> for brevity.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">// Make the concrete root.  Use our implementation of IErrorContext.
+this.root = WatchNode.Clone(root, PathComponents.Make(src.FullName), this);</code></pre></div></div></li><li><p>
+              In QI, watched folders were a continuously running "background" task.  It was not acceptable that the task stopped upon
+              encountering just about any kind of error, but some errors were "fatal" (e.g., the disk got disconnected).  Common
+              non-fatal errors were non-existing directory (would get created during file copying) or misconfigured directory
+              permissions.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">// Ignore particular exception: wait until the directories are created. 
+Exception IErrorContext.Accept(in Quine.FileWatcher.ErrorInfo errorInfo) =&gt;
+    errorInfo.Exception is DirectoryNotFoundException ? null : errorInfo.Exception;</code></pre></div></div><p>
+              In this example, the error context instructs the watcher to ignore <span class="code">DirectoryNotFoundException</span>.
+            </p></li><li><p>
+              Run the watcher periodically.  Remember that a file is reported only after having been unchanged after two consecutive poll runs.
+            </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle">C#</span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-csharp">private async Task PollAsync() {
+loop:
+    try {
+        var newEntries = WatchNode.Walk(root).NewEntries.ToList();  // NB! Because it's lazily enumerated.
+
+        Console.WriteLine($"\nROUND: {DateTime.Now}: {newEntries.Count} new entries in this round.");
+        foreach (var e in newEntries) {
+            var ps = string.Join(',', e.Parameters.Select(kv =&gt; $"{kv.Key}={kv.Value}"));
+            Console.WriteLine($"{e.Path.NormalizedString}: {ps}");         // We're lazy.
+        }
+        await Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
+        goto loop;
+    }
+    catch (OperationCanceledException) {
+        // Done
+    }
+}</code></pre></div></div><p>
+              Notice the call to <span class="code">ToList()</span>.  The result returned by <span class="noLink">Walk<span id="LST94E1C6DD_0" data-languageSpecificText="cs=()|vb=|cpp=()|nu=()|fs=()"></span></span>
+              is <em>lazy</em>, and here we use the complete result two times: once to get the <span class="code">Count</span> and 
+              once to print each result entry in detail.
+            </p></li></ol></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Compiling the Code</h2><div id="IDFABSection"><p>
+          Use Visual Studio to build the solution.
+        </p><p>
+          After build: open the command line, create a temporary directory to watch and run the application as below.
+          The program polls for changes in the given directory (here, <span class="code">D:\t</span>) every 5 seconds
+          and exits when Q key is pressed in the terminal.
+        </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle"> </span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-plaintext">Quine.Samples.exe WatchDir D:\t</code></pre></div></div><p>
+          While the program is running, create files at the following relative paths under the watched directory
+        </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle"> </span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-plaintext">A/12/A01.TXT
+A/13/A02.TXT
+A/12/A02.TXT
+B/B01.TXT
+
+A/A04.TXT
+A/Something/A05.TXT
+C/C01.TXT</code></pre></div></div><p>
+          and observe the output; it should resemble the sample from a real run below (rounds with 0 results have been removed).
+          Notice also that the last three files are not reported because they are not matched by any node in the tree.
+        </p><div class="codeSnippet"><div class="codeHeader"><span class="codeHeaderTitle"> </span><button class="button is-small is-light copyCode" title="Copy"><span class="icon is-small"><i class="fa fa-copy"></i></span><span>Copy</span></button></div><div class="codePanel hljs"><pre xml:space="preserve"><code class="language-plaintext">ROUND: 31.12.2024 11:52:55: 1 new entries in this round.
+D:/t/A/12/A01.TXT: $(Key)=Value,$(DayNumber)=12
+...
+ROUND: 31.12.2024 11:53:05: 1 new entries in this round.
+D:/t/A/12/A02.TXT: $(Key)=Value,$(DayNumber)=12
+...
+ROUND: 31.12.2024 11:55:12: 1 new entries in this round.
+D:/t/A/13/A02.TXT: $(DayNumber)=13,$(Key)=Value
+...
+ROUND: 31.12.2024 11:56:12: 1 new entries in this round.
+D:/t/B/B01.TXT: $(OtherKey)=OtherValue</code></pre></div></div><p>
+          If you start the program again and set it to watch the same directory, it will immediately report all previously created files.
+        </p></div></div><div id="InThisArticleColumn" class="column is-hidden-mobile"><nav class="menu sticky is-hidden"><p class="menu-label"><strong>In This Article</strong></p><ul id="InThisArticleMenu" class="menu-list"><li><a class="quickLink">Watching a directory hierarchy</a></li><li><a class="quickLink">Compiling the Code</a></li></ul></nav></div></div></div><footer id="PageFooter" class="footer border-top py-3 fixedFooter"><div class="columns"><div id="FooterContent" class="column"><p><a href="(c) 2024-2025 Stian Z. Vrba" target="_blank" rel="noopener noreferrer">(c) 2024-2025 Stian Z. Vrba</a></p> 
+				</div></div></footer></div><script>$(function(){
+SetDefaultLanguage("cs");
+LoadTocFile(null, null);
+InitializeQuickLinks();
+
+$(".toggleSection" ).click(function () {
+    SectionExpandCollapse(this);
+});
+
+$(".toggleSection").keypress(function () {
+    SectionExpandCollapseCheckKey(this, event)
+});
+hljs.highlightAll();
+});</script></body></html>

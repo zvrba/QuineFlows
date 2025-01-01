@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html ><html lang="en-US"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="shortcut icon" href="../icons/favicon.ico" /><link rel="stylesheet" href="../css/bulma.css" /><link rel="stylesheet" href="../css/font-awesome.min.css" /><link rel="stylesheet" href="../css/presentationStyle.css" /><link rel="stylesheet" href="../css/vs.min.css" /><script src="../scripts/jquery-3.5.1.min.js"></script><script src="../scripts/clipboard.min.js"></script><script src="../scripts/highlight.min.js"></script><script src="../scripts/presentationStyle.js"></script><title>Developer's guide</title><meta name="Title" content="Developer's guide" /><meta name="Help.Id" content="a627553e-d7bb-4309-92e8-e34ace2a1aec" /><meta name="Help.ContentType" content="Concepts" /><meta name="guid" content="a627553e-d7bb-4309-92e8-e34ace2a1aec" /><meta name="Description" content="This document is a user's guide and reference manual for Quine libraries. Please read a little about history below to learn about the problem domain for which the libraries were written." /><meta name="tocFile" content="../toc/Root.xml" /></head><body><div class="fixedLayout"><div id="Header" class="fixedHeader"><div class="pageHeader level mb-0 py-2 px-4"><div id="TitleContainer" class="level-left"><div class="level-item"><img src="../icons/Help.png" /></div><div id="DocumentationTitle" class="level-item">Quine libraries user's guide</div></div><div id="LangFilterSearchContainer" class="level-right"><div class="level-item"><div class="dropdown is-hoverable"><div class="dropdown-trigger"><button class="button" aria-haspopup="true" aria-controls="dropdown-menu"><span id="CurrentLanguage"></span><span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span></button></div><div class="dropdown-menu" role="menu"><div id="LanguageSelections" class="dropdown-content"><a class="dropdown-item languageFilterItem" data-languageId="cs">C#</a></div></div></div></div><div class="level-item"><form id="SearchForm" action="#" onsubmit="TransferToSearchPage(); return false;"><div class="field"><div class="control has-icons-left"><input id="SearchTerms" class="input" type="text" maxlength="200" placeholder="Search" /><span class="icon is-small is-left"><i class="fa fa-search"></i></span><button id="SearchButton" type="submit" class="is-hidden"></button></div></div></form></div></div></div></div><div class="fixedContent"><nav class="breadcrumb my-1 px-2 border-bottom" role="navigation"><ul id="TopicBreadcrumbs" /></nav><div id="ContentContainer" class="columns pl-5 pr-5 fixedContent"><div id="ShowHideTOCColumn" class="column is-hidden-tablet"><a id="ShowHideTOC">Show/Hide TOC</a></div><div id="TOCColumn" class="column is-hidden-mobile"><nav class="toc"><ul id="TableOfContents" class="toc-menu" /></nav></div><div id="Resizer" class="is-hidden"></div><div id="TopicContent" class="column content is-7"><h1>Developer's guide</h1><div><p>
+        This document is a user's guide and reference manual for Quine libraries.  Please read a little about history below
+        to learn about the problem domain for which the libraries were written.  The individual libraries' pages provide even
+        more history, background, use-cases and "war stories".  Use the navigation bar to the left to navigate between the different topics.
+      </p><p>
+        The source code is available at
+        <a href="https://github.com/zvrba/QuineFlows" target="_blank" rel="noopener noreferrer">GitHub (QuineFlows)</a>.
+      </p></div><h2 id="History" class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>History</h2><div id="IDBABSection"><p>Quine AS was a startup founded by me (Stian Z. Vrba) and two other co-founders late in 2017 and
+          dissolved mid 2024.  We automated manual workflows in movie and series productions, but the solution was a hard sell due
+          to a combination of technical, market and - not the least - social factors.  I have been the main architect and
+          developer at Quine and in this repository I have placed the most general-purpose code that I hope others will find a use for.
+          I wrote this documentation as a hobby project to make it easier to study and possibly get started with using the code.
+        </p><p>
+          The company's name was borrowed from logician Willard Van Orman Quine. We also (briefly) considered to be brutally
+          honest and name the company "Bug Factory" because all software has bugs somwehere.
+        </p><blockquote>
+          In these pages, I present fragments of the company's history from my POV, as the main architect, data-model designer and
+          back-end developer; the other co-founders might present a different view.  Because I focus here on technical matters relevant
+          for the released code, I strongly believe that the presented pieces are non-controversial.
+        </blockquote><p>
+          We started with "QuineBox", a customized Intel NUC attached to camera, that could upload edit proxies immediately
+          after the recording was finished. It did this by capturing the camera's SDI stream and encoding it to prores or H.264
+          in real-time.  (A side-note: QuineBox ran on embedded Windows edition.)  This could have been a great improvement over the "usual" workflows, where recordings are offloaded to "orange
+          disks" and sent to editors by train, taxi or such.
+          (We invented "camera to cloud" before it became an established term!) Unfortunately, QuineBox had some critical
+          problems -- mostly around network connectivity and manufacturing costs -- which forced us to abandon it and focus on a production
+          asset management system (PAM).
+        </p><blockquote>
+          Q: Users of QuineBox wondered why uploads to FTP servers on public internet "just worked", but were troublesome towards
+          FTP servers on the local network.  A: Because internet is maintained by people who have a clue about networking.
+          (Hard truth that we never told to our users.)
+        </blockquote><p>
+          Our PAM system was to be the 3rd step in the evolution of media productions:
+        </p><ol><li><p>
+              Analog recording devices (film reels, audio tapes), manual workflows.
+            </p></li><li><p>
+              Digital recording devices, manual workflows (assets tracked in Excel, often printed sheets).
+            </p></li><li><p>
+              Digital recording devices, digital and automated workflows (assets tracked in a searchable database).
+            </p></li></ol><p>
+          After switching our focus to PAM, we developed QuineIngest (QI), an application which automated a number of tasks: secure copying,
+          transcoding, uploading to cloud for sharing, automation triggered by watch folders, etc.  The libraries in this repository have been
+          pulled out from QuineIngest and prepared for stand-alone use.
+        </p><p>
+          QI was also accompanied by a web application that allowed users to browse and play clips, while editors could make a selection and
+          export a ready-to-edit project for Adobe Premiere or AVID.  Shortly before we shut down, the web application also got a feature for
+          automatic transcription (speech-to-text) of recorded material.  I did not have much involvement in these segments.
+        </p><p>
+          Other areas which I <em>have</em> been involved with are programmatic Azure deployments, authentication and security (based
+          on AzureAD (now EntraId) groups), program licensing and activation.  These parts are currently of the scope of the released
+          libraries because they were tailored to QI and thus not very generic.
+        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Computer source code license</h2><div id="IDCABSection"><p>
+          This section covers the files in the following directories:
+        </p><ul class="noBullet"><li><p><span class="code">Quine.FileTransfer</span></p></li><li><p><span class="code">Quine.Schemas.Core</span></p></li><li><p><span class="code">Quine.Schemas.Graph</span></p></li><li><p><span class="code">Quine.Graph</span></p></li><li><p><span class="code">Quine.FileWatcher</span></p></li><li><p><span class="code">Quine.Samples</span></p></li></ul><p>
+          Copyright 2024, 2025 Stian Z. Vrba
+        </p><p>
+          Licensed under the Apache License, Version 2.0 (the "License");
+          you may not use this file except in compliance with the License.
+          You may obtain a copy of the License at
+          <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener noreferrer">here</a>.
+        </p><p>
+          Unless required by applicable law or agreed to in writing, software
+          distributed under the License is distributed on an "AS IS" BASIS,
+          WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+          See the License for the specific language governing permissions and
+          limitations under the License.
+        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Documentation license</h2><div id="IDDABSection"><p>
+          The documentation (all content in <span class="code">docs</span> branch) is licensed under
+          <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-ND 4.0</a>
+           license.
+        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Version history</h2><div id="IDEABSection"><dl><dt>
+            2025-01-01
+          </dt><dd><p>
+              Initial release.
+            </p></dd></dl></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>See Also</h2><div id="seeAlsoSection"><h4>Other Resources</h4><div><a href="90fca4d6-615c-4b1d-b77b-0ff1f7baae4b.htm">Glossary</a></div></div></div><div id="InThisArticleColumn" class="column is-hidden-mobile"><nav class="menu sticky is-hidden"><p class="menu-label"><strong>In This Article</strong></p><ul id="InThisArticleMenu" class="menu-list"><li><a class="quickLink">History</a></li><li><a class="quickLink">Computer source code license</a></li><li><a class="quickLink">Documentation license</a></li><li><a class="quickLink">Version history</a></li><li><a class="quickLink">See Also</a></li></ul></nav></div></div></div><footer id="PageFooter" class="footer border-top py-3 fixedFooter"><div class="columns"><div id="FooterContent" class="column"><p><a href="(c) 2024-2025 Stian Z. Vrba" target="_blank" rel="noopener noreferrer">(c) 2024-2025 Stian Z. Vrba</a></p> 
+				</div></div></footer></div><script>$(function(){
+SetDefaultLanguage("cs");
+LoadTocFile(null, null);
+InitializeQuickLinks();
+
+$(".toggleSection" ).click(function () {
+    SectionExpandCollapse(this);
+});
+
+$(".toggleSection").keypress(function () {
+    SectionExpandCollapseCheckKey(this, event)
+});
+});</script></body></html>

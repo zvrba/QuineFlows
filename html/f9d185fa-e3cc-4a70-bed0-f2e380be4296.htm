@@ -1,0 +1,104 @@
+﻿<!DOCTYPE html ><html lang="en-US"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="shortcut icon" href="../icons/favicon.ico" /><link rel="stylesheet" href="../css/bulma.css" /><link rel="stylesheet" href="../css/font-awesome.min.css" /><link rel="stylesheet" href="../css/presentationStyle.css" /><link rel="stylesheet" href="../css/vs.min.css" /><script src="../scripts/jquery-3.5.1.min.js"></script><script src="../scripts/clipboard.min.js"></script><script src="../scripts/highlight.min.js"></script><script src="../scripts/presentationStyle.js"></script><title>Graph framework</title><meta name="Title" content="Graph framework" /><meta name="Help.Id" content="f9d185fa-e3cc-4a70-bed0-f2e380be4296" /><meta name="Help.ContentType" content="Concepts" /><meta name="guid" content="f9d185fa-e3cc-4a70-bed0-f2e380be4296" /><meta name="Description" content="When we started with QI, we knew it had to be modular and that workflows must be data instead of code as was the case with Gamp (see &quot;History&quot; below)." /><meta name="tocFile" content="../toc/IDA.xml" /></head><body><div class="fixedLayout"><div id="Header" class="fixedHeader"><div class="pageHeader level mb-0 py-2 px-4"><div id="TitleContainer" class="level-left"><div class="level-item"><img src="../icons/Help.png" /></div><div id="DocumentationTitle" class="level-item">Quine libraries user's guide</div></div><div id="LangFilterSearchContainer" class="level-right"><div class="level-item"><div class="dropdown is-hoverable"><div class="dropdown-trigger"><button class="button" aria-haspopup="true" aria-controls="dropdown-menu"><span id="CurrentLanguage"></span><span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span></button></div><div class="dropdown-menu" role="menu"><div id="LanguageSelections" class="dropdown-content"><a class="dropdown-item languageFilterItem" data-languageId="cs">C#</a></div></div></div></div><div class="level-item"><form id="SearchForm" action="#" onsubmit="TransferToSearchPage(); return false;"><div class="field"><div class="control has-icons-left"><input id="SearchTerms" class="input" type="text" maxlength="200" placeholder="Search" /><span class="icon is-small is-left"><i class="fa fa-search"></i></span><button id="SearchButton" type="submit" class="is-hidden"></button></div></div></form></div></div></div></div><div class="fixedContent"><nav class="breadcrumb my-1 px-2 border-bottom" role="navigation"><ul id="TopicBreadcrumbs" /></nav><div id="ContentContainer" class="columns pl-5 pr-5 fixedContent"><div id="ShowHideTOCColumn" class="column is-hidden-tablet"><a id="ShowHideTOC">Show/Hide TOC</a></div><div id="TOCColumn" class="column is-hidden-mobile"><nav class="toc"><ul id="TableOfContents" class="toc-menu" /></nav></div><div id="Resizer" class="is-hidden"></div><div id="TopicContent" class="column content is-7"><h1>Graph framework</h1><div><p>
+        When we started with QI, we knew it had to be modular and that workflows must be <em>data</em> instead of <em>code</em>
+        as was the case with <strong>Gamp</strong> (see "History" below).  I earned my PhD researching Kahn process networks and that pushed me towards a graph-based approach
+        where nodes process data and edges define data-flow.  We agreed that it was the right approach, not the least because it would
+        be familiar to at least some of our users as, e.g., Foundry's Nuke uses it.
+      </p><p>
+        Before embarking on making this framework, I studied the TPL Dataflow library in some detail, and it left me in doubt about
+        whether it could be adapted to all of our upfront requirements:
+      </p><ul><li><p>
+            Workflow description must be serializable independently of the code that executes it.
+          </p></li><li><p>
+            Messages present in the edges must also be serialized / deserialized.  (The intention was to be able to cancel workflow
+            execution and resume it at a later point.  We solved this in another way though and removed this capability from the code.)
+          </p></li><li><p>
+            Event reporting and interactive queries.  The latter sends an event to the front-end and blocks the
+            node until a reply is received.
+          </p></li><li><p>
+            Persistent (serializable) trace of graph execution.
+          </p></li></ul><p>
+        As will become evident from the "Getting started" section, the graph topology
+        is decoupled from the code executing it.  This enabled users to create libraries of "workflows templates".  The user could load
+        a workflow template from the database, customize parameters (e.g., input path with files to process) and then start the job.
+      </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Historical note</h2><div id="IDBABSection"><p>
+          Quine was a follow-up to another failed startup where we (the co-founders) first met.  In that previous startup, we developed
+          a workflow application called <strong>Gamp</strong>.  It was <em>loved</em> by users, but it had severe technical
+          problems: workflow steps were hard-coded
+          into the application and were inter-twined.  Any customization pretty much needed also a few debugging sessions to get it right.
+          Not the least, it was coded in Qt and C++, which was a nightmare to deploy on two different platforms.  (Windows ans OSX,
+          OSX being the worst.)
+        </p><blockquote>
+          "Gamp" is a norwegian word for a work-horse.
+        </blockquote><p>
+          QI had a number of predefined node types that performed various "fixed" functions whereas users were able to create flexible
+          workflows on their own; an example is shown in the figure below.
+        </p><figure class="mediaNear"><figcaption>Simple Workflow</figcaption><img alt="Simple Workflow" src="../media/SimpleWorkflow.png" /></figure><p>
+          While QI was a huge technical advancement over <strong>Gamp</strong> (hey, no need to compile and deploy a new binary in order
+          to support a slightly different workflow!), the figure hints at messiness of the real-world that did not fit neatly into the graph framework
+          and which we implemented through various ad-hoc "hacks":
+        </p><ul><li><p>
+              Users wanted an estimate of <em>global</em> progress ("when will the job finish?"), not just progress of individual nodes
+              for individual files.  While parallel execution of nodes extracts performance (e.g.: while file #13 is being copied,
+              file #4 is being transcoded and file #3 is being uploaded), it is difficult to show to the user what's going on.
+            </p></li><li><p>
+              Copy node is special.  Users want to immediately know when all files have been copied and verified so that they can
+              reuse the original magazine ASAP.
+            </p></li><li><p>
+              In a "clean" implementation, nodes should not need to know about each other.  However, situations occurred
+              where they had to inspect parts of each other's state.
+            </p></li><li><p>
+              Semi-success states.  Processing a file at a node might result in an error, but this should not mark the whole job
+              as being in error state.
+            </p></li></ul><article class="message is-info"><div class="message-header"><p><span class="icon"><i class="fa fa-info-circle"></i></span>  Tip</p></div><div class="message-body"><p>
+            The real world is messy.
+          </p><p>
+            Users want automation, but they also want to "feel in control".  They are, in fact, NOT in control when the automation overtakes
+            manual tasks, but the <em>illusory perception</em> of control is important from the UI/UX perspective.
+          </p></div></article><p>
+          Even though QI was a powerful and performant tool that was used on at least 150 professional drama productions over the
+          years, the users were
+          never "happy"; they "tolerated" it because it saved them many hours of work <em>per day</em>. One big reason was its
+          <em>data-oriented</em> UI, which required a "workflow expert" to configure it before use in a production.
+          Another big reason were its lacking reporting capabilities that would provide them with the illusion of control.
+          We were simply unable to find a satisfactory UI/UX solution to users' conflicting requirements:
+        </p><ul><li><p>
+              Users want performance and automation with little interaction: this is best achieved with batched, asynchronous and parallel execution.
+            </p></li><li><p>
+              Users want the same kind of intuitive feedback about job state that they're used to getting from interactive, serial processes.
+            </p></li></ul><p>
+          Our users got their job done, many work hours were saved (less overtime!), but they were never confident in QI having
+          performed all the tasks it should.  This distrust persisted even after many successful workflow runs because they never felt that
+          they were "in control".
+        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Concepts</h2><div id="IDCABSection"><p>
+          The basic concepts are <em>nodes</em> which are connected through <em>ports</em> which are used
+          to exchange messages.  A connected set of nodes constitutes a <em>graph</em>.  Message receiving is handled
+          implicitly by the base classes, while messages must be sent explicitly to an output port.
+        </p><figure class="mediaNear"><figcaption>Predefined abstract node types</figcaption><img alt="Graph Nodes" src="../media/GraphNodes.png" /></figure><p>
+          A node can have at most one input port for
+          receiving messages, and 0 or more output ports for sending messages.  Predefined (abstract) node types are shown in the
+          figure below.  A node with multiple input ports is not provided because 1) they weren't needed to define real-world
+          workflows, and 2) it provides multiple, equally-valid, implementation options.  ("AND": node fires when there's a
+          message on every port, "OR": node fires when at least one port has a message.)
+        </p><p>
+          Every graph must have a single <em>source</em> node and a single <em>drain</em> node (a transform
+          node with no outputs).  The latter requirement is somewhat artificial but aids in validation before the graph is
+          started:
+        </p><ul><li><p>
+              Every output port of every node must be connected to at least one input port.
+              It is allowed to connect the same output port to many (different) input ports
+          </p></li><li><p>Every input port of every node must have a connection from at leat one output port.</p></li></ul><p>
+          These checks exist to ensure graph termination when there are no more messages to process.
+        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>See Also</h2><div id="seeAlsoSection"><h4>Other Resources</h4><div><a href="74491b35-31c2-4389-be7d-ff87e0ceaa19.htm">Getting started with Graph framework</a></div></div></div><div id="InThisArticleColumn" class="column is-hidden-mobile"><nav class="menu sticky is-hidden"><p class="menu-label"><strong>In This Article</strong></p><ul id="InThisArticleMenu" class="menu-list"><li><a class="quickLink">Historical note</a></li><li><a class="quickLink">Concepts</a></li><li><a class="quickLink">See Also</a></li></ul></nav></div></div></div><footer id="PageFooter" class="footer border-top py-3 fixedFooter"><div class="columns"><div id="FooterContent" class="column"><p><a href="(c) 2024-2025 Stian Z. Vrba" target="_blank" rel="noopener noreferrer">(c) 2024-2025 Stian Z. Vrba</a></p> 
+				</div></div></footer></div><script>$(function(){
+SetDefaultLanguage("cs");
+LoadTocFile(null, null);
+InitializeQuickLinks();
+
+$(".toggleSection" ).click(function () {
+    SectionExpandCollapse(this);
+});
+
+$(".toggleSection").keypress(function () {
+    SectionExpandCollapseCheckKey(this, event)
+});
+});</script></body></html>

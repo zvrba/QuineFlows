@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html ><html lang="en-US"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="shortcut icon" href="../icons/favicon.ico" /><link rel="stylesheet" href="../css/bulma.css" /><link rel="stylesheet" href="../css/font-awesome.min.css" /><link rel="stylesheet" href="../css/presentationStyle.css" /><link rel="stylesheet" href="../css/vs.min.css" /><script src="../scripts/jquery-3.5.1.min.js"></script><script src="../scripts/clipboard.min.js"></script><script src="../scripts/highlight.min.js"></script><script src="../scripts/presentationStyle.js"></script><title>PathComponents Fields</title><meta name="Title" content="Fields" /><meta name="Help.Id" content="Fields.T:Quine.Schemas.Core.PathComponents" /><meta name="Help.ContentType" content="Reference" /><meta name="container" content="Quine.Schemas.Core" /><meta name="guid" content="b512d922-47ea-fc5e-77f0-8910bad5fbf1" /><meta name="tocFile" content="../toc/IDMI.xml" /></head><body><div class="fixedLayout"><div id="Header" class="fixedHeader"><div class="pageHeader level mb-0 py-2 px-4"><div id="TitleContainer" class="level-left"><div class="level-item"><img src="../icons/Help.png" /></div><div id="DocumentationTitle" class="level-item">Quine libraries user's guide</div></div><div id="LangFilterSearchContainer" class="level-right"><div class="level-item"><div class="dropdown is-hoverable"><div class="dropdown-trigger"><button class="button" aria-haspopup="true" aria-controls="dropdown-menu"><span id="CurrentLanguage"></span><span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span></button></div><div class="dropdown-menu" role="menu"><div id="LanguageSelections" class="dropdown-content"><a class="dropdown-item languageFilterItem" data-languageId="cs">C#</a></div></div></div></div><div class="level-item"><form id="SearchForm" action="#" onsubmit="TransferToSearchPage(); return false;"><div class="field"><div class="control has-icons-left"><input id="SearchTerms" class="input" type="text" maxlength="200" placeholder="Search" /><span class="icon is-small is-left"><i class="fa fa-search"></i></span><button id="SearchButton" type="submit" class="is-hidden"></button></div></div></form></div></div></div></div><div class="fixedContent"><nav class="breadcrumb my-1 px-2 border-bottom" role="navigation"><ul id="TopicBreadcrumbs" /></nav><div id="ContentContainer" class="columns pl-5 pr-5 fixedContent"><div id="ShowHideTOCColumn" class="column is-hidden-tablet"><a id="ShowHideTOC">Show/Hide TOC</a></div><div id="TOCColumn" class="column is-hidden-mobile"><nav class="toc"><ul id="TableOfContents" class="toc-menu" /></nav></div><div id="Resizer" class="is-hidden"></div><div id="TopicContent" class="column content is-7"><h1>Path<wbr />Components Fields</h1><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Fields</h2><div id="IDADASection"><table id="FieldList" class="table is-hoverable"><tr><td><a href="4fda2afc-3e77-1145-b561-7808e43cb6c1.htm">Empty</a></td><td>
+            Unique instance of an empty <span class="code">PathComponents</span> object: it has zero components and is not absolute.
+            An empty <span class="code">PathComponents</span> object cannot be instantiated in any other way.  NB! <span class="code">default</span>
+            instance is regrettably NOT equal to <span class="code">Empty</span>.
+            </td></tr><tr><td><a href="8d0208a2-b14f-78f4-62b0-a411b519846e.htm">ForbiddenChars</a></td><td>
+            A set of characters that must not occur in either native file names or path names in a cross-platform application.
+            '\' is also included; it may possibly be a valid filename char on unix, but we can't allow it in xplatform app.
+            </td></tr><tr><td><a href="e2767fc8-b18c-6fb1-cac3-0670b0977c68.htm">IsAbsolute</a></td><td>
+            True if this is an absolute path.
+            </td></tr><tr><td><a href="f6771371-43f2-ea3c-0047-234615e1fe65.htm">IsWindows</a></td><td>
+            True if we're running on Windows.
+            </td></tr><tr><td><a href="2455e862-58f1-487a-b174-e09b250c9f34.htm">NormalizedString</a></td><td>
+            Normalized string for serialization; uses '/' as separator character.
+            </td></tr><tr><td><a href="238802a3-c52f-a81b-4cfc-7cd1cee0b47a.htm">SeparatorChar</a></td><td>
+            The <span class="code">/</span> character is internally used to separate individual components.
+            </td></tr></table></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>See Also</h2><div id="seeAlsoSection"><h4>Reference</h4><div><a href="64e01fb7-853b-21d5-9d21-49504376bcc9.htm">PathComponents Structure</a></div><div><a href="2ffa85b0-6f2c-71b6-d23c-236e323bca41.htm">Quine.Schemas.Core Namespace</a></div></div></div><div id="InThisArticleColumn" class="column is-hidden-mobile"><nav class="menu sticky is-hidden"><p class="menu-label"><strong>In This Article</strong></p><ul id="InThisArticleMenu" class="menu-list"><li><a class="quickLink">Fields</a></li><li><a class="quickLink">See Also</a></li></ul></nav></div></div></div><footer id="PageFooter" class="footer border-top py-3 fixedFooter"><div class="columns"><div id="FooterContent" class="column"><p><a href="(c) 2024-2025 Stian Z. Vrba" target="_blank" rel="noopener noreferrer">(c) 2024-2025 Stian Z. Vrba</a></p> 
+				</div></div></footer></div><script>$(function(){
+SetDefaultLanguage("cs");
+LoadTocFile(null, null);
+InitializeQuickLinks();
+
+$(".toggleSection" ).click(function () {
+    SectionExpandCollapse(this);
+});
+
+$(".toggleSection").keypress(function () {
+    SectionExpandCollapseCheckKey(this, event)
+});
+});</script></body></html>
