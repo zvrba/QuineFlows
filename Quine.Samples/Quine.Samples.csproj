@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quine.FileTransfer\Quine.FileTransfer.csproj" />
+    <ProjectReference Include="..\Quine.FileWatcher\Quine.FileWatcher.csproj" />
+    <ProjectReference Include="..\Quine.Graph\Quine.Graph.csproj" />
+    <ProjectReference Include="..\Quine.Schemas.Core\Quine.Schemas.Core.csproj" />
+    <ProjectReference Include="..\Quine.Schemas.Graph\Quine.Schemas.Graph.csproj" />
+  </ItemGroup>
+
+</Project>
