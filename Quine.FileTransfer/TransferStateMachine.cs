@@ -31,6 +31,21 @@ public abstract class TransferStateMachine
     /// Reflects any errors which occurred during execution (<c>null</c> on successful completion).
     /// This property may be accessed only after the execution has completed.
     /// </summary>
+    /// <remarks>
+    /// In rare cases, due to inherent race conditions during parallel execution, this property might not reflect the "real"
+    /// exception that occurred.  This happens when:
+    /// <list type="bullet">
+    /// <item>
+    /// Both the producer and ALL consumers fail.  The producer's exception will either be its "real" exception or
+    /// <see cref="OperationCanceledException"/>.
+    /// </item>
+    /// <item>
+    /// When the producer fails in <see cref="ITransferWorker.FinalizeAsync(ITransferHasher?, ITransferBuffer)"/> (a dubious
+    /// failure because it will aready have produced all data there was), "fast" consumers will complete successfully, while
+    /// the "slow" ones will complete with <see cref="OperationCanceledException"/>.
+    /// </item>
+    /// </list>
+    /// </remarks>
     /// <exception cref="InvalidOperationException">The property is accessed during execution.</exception>
     public Exception? Exception {
         get {
