@@ -148,7 +148,13 @@ private async Task CopyFile(string srcFileName) {
           but cannot be adjusted during the transfer (through some kind of feedback loop).  For fixed setup and huge amounts of data,
           it is wise to perform some experiments upfront to determine the best combination of parameters. (This could also be done "online"
           by running some kind of ML between transfers of individual files.)
-        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Security</h2><div id="IDFABSection"><p>
+        </p></div><h2 class="quickLinkHeader"><span class="icon toggleSection" tabindex="0"><i class="fa fa-angle-down"></i></span>Security</h2><div id="IDFABSection"><p><span class="code">FillAsync</span> and <span class="code">DrainAsync</span> MUST NOT "steal" a reference to <span class="code">ITransferBuffer</span>,
+          or any of its members, for later use.  Doing so WILL lead to data corruption or, even worse, undefined behavior and true security problems
+          due to use-after-free bugs.  <span class="code">TransferDriver</span> allocates native memory and frees it upon disposal or finalization.
+        </p><p>
+          Because <span class="code">TransferDriver</span> implements a finalizer that deallocates native memory, you MUST hold a live
+          reference to it during the transfer.
+        </p><p>
           File copying can be destructive.  <a href="0a2c74b3-4574-9e50-4ba1-634496290db9.htm">UnbufferedFile</a>
           reader and writer accept any path that the OS deems valid.  In production, and as shown in the above sample, you should always work with absolute paths.
           QI also disallowed writing to the "root" path, i.e., <span class="code">/</span> under UNIX and <span class="code">X:\</span>

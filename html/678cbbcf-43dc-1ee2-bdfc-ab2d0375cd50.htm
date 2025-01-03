@@ -5,8 +5,8 @@
             is greater than 1.
             The driver stops invoking this method after an error has occurred.
             </p><p>
-            WARNING: The data from the buffer MUST be completely consumed.
-            If this rule is not followed, data will be corrupt at the destinations.
+            WARNINGS: The data from the buffer MUST be completely consumed. If this rule is not followed, data will be corrupt at the destinations.
+            Do NOT keep a reference to <span class="parameter">buffer</span>, or any of its members, for later use outside of this method.
             </p></td></tr><tr><td><a href="a13c6b5a-b9b3-8e46-9b18-61cb1156cb12.htm">FinalizeAsync</a></td><td><p>
             Finalizes the worker by computing the verification hash and disposing of any previously acquired resources.
             Failure must be signaled by throwing an exception.

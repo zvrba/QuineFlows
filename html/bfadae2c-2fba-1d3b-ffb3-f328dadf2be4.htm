@@ -4,8 +4,9 @@
             This method will be invoked concurrently when <a href="66874b03-741d-93bd-cbd8-7d61db48eb1b.htm">MaxConcurrency</a> is greater than 1.
             The driver stops invoking this method after an error has occurred.
             </p><p>
-            WARNING: The buffer MUST be completely filled with data unless this is the last block of the file.
+            WARNINGS: The buffer MUST be completely filled with data unless this is the last block of the file.
             If this rule is not followed, data will be corrupt at the destinations.
+            Do NOT keep a reference to <span class="parameter">buffer</span>, or any of its members, for later use outside of this method.
             </p></td></tr><tr><td><a href="68f0675f-001f-89d9-bd0d-e27c3214416b.htm">FinalizeAsync</a></td><td><p>
             Finalizes the worker by computing the verification hash and disposing of any previously acquired resources.
             Failure must be signaled by throwing an exception.

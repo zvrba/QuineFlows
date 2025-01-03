@@ -160,6 +160,8 @@
             the last block of the file as shown in <span class="noLink">this figure</span>.
           </p><p><span class="code">FinalizeAsync</span> is invoked even if <span class="code">InitializeAsync</span> threw.  Ensure that
             this case is handled correctly.
+          </p><p><span class="code">FillAsync</span> and <span class="code">DrainAsync</span> MUST NOT "steal" a reference to <span class="code">ITransferBuffer</span>,
+            or any of its members, for later use.  
           </p></div></article><p>
           The rationale behind the "weird" signature and sematics of
           <a href="68f0675f-001f-89d9-bd0d-e27c3214416b.htm">FinalizeAsync</a>
