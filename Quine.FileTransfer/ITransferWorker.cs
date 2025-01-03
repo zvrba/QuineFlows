@@ -62,8 +62,9 @@ public interface ITransferProducer : ITransferWorker
     /// The driver stops invoking this method after an error has occurred.
     /// </para>
     /// <para>
-    /// WARNING: The buffer MUST be completely filled with data unless this is the last block of the file.
+    /// WARNINGS: The buffer MUST be completely filled with data unless this is the last block of the file.
     /// If this rule is not followed, data will be corrupt at the destinations.
+    /// Do NOT keep a reference to <paramref name="buffer"/>, or any of its members, for later use outside of this method.
     /// </para>
     /// </summary>
     /// <param name="buffer">
@@ -90,8 +91,8 @@ public interface ITransferConsumer : ITransferWorker
     /// The driver stops invoking this method after an error has occurred.
     /// </para>
     /// <para>
-    /// WARNING: The data from the buffer MUST be completely consumed.
-    /// If this rule is not followed, data will be corrupt at the destinations.
+    /// WARNINGS: The data from the buffer MUST be completely consumed. If this rule is not followed, data will be corrupt at the destinations.
+    /// Do NOT keep a reference to <paramref name="buffer"/>, or any of its members, for later use outside of this method.
     /// </para>
     /// </summary>
     /// <param name="buffer">
