@@ -66,6 +66,7 @@ internal sealed class ProducerStateMachine : TransferStateMachine
                         Driver.Broadcast(buffer);
                         ++drainsequence;
                     }
+                    buffer = null;
                 }
             }
         }

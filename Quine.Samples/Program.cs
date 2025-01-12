@@ -2,6 +2,7 @@
 using System.CommandLine;
 using System.IO;
 using System.Threading.Tasks;
+using Quine.Samples.StressTest;
 
 namespace Quine.Samples;
 
@@ -11,7 +12,7 @@ internal class Program
         var rootCmd = new RootCommand(typeof(Program).Assembly.GetName().Name!);
         
         var stressCmd = new Command("StressTest", "Run a stress-test.  WARNING: This takes a LONG time.");
-        stressCmd.SetHandler(StressTest.ExecuteAsync);
+        stressCmd.SetHandler(Runner.ExecuteAsync);
         rootCmd.AddCommand(stressCmd);
 
         var copyCmd = new Command("CopyDir", "Non-recursive copy of files in directory.");
